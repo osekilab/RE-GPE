@@ -52,4 +52,4 @@ Thumbs.db
 # Evaluation outputs
 /src/reverse_engineering/perplexity_evaluation/
 /src/reverse_engineering/blimp_evaluation*/
-/src/reverse_engineering/arr_plots/
+/src/reverse_engineering/figures/

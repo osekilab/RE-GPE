@@ -6,7 +6,7 @@ Reads:
   perplexity_evaluation/results{,_md,_lg,_rc,_rc_md,_rc_lg}.json
   blimp_evaluation{,_md,_lg,_rc,_rc_md,_rc_lg}/summary.json
 
-Writes the table to stdout and to ``arr_plots/ppl_blimp_appendix.tex``.
+Writes the table to stdout and to ``figures/ppl_blimp_appendix.tex``.
 
 Notes:
   - RC Large folds 20 and 22 failed to converge; they are excluded from
@@ -173,7 +173,7 @@ def main():
 
     print(text)
 
-    out = Path("arr_plots/ppl_blimp_appendix.tex")
+    out = Path("figures/ppl_blimp_appendix.tex")
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(text)
     print(f"Wrote {out}", flush=True)

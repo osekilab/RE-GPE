@@ -180,7 +180,38 @@ matching run (e.g. `output/gp_mvrr` with `configs/garden_path_template_mvrr.yaml
 Each summary holds the per-construction Amb − Unamb effects (predicted and actual,
 ROI 0/1/2) and the delta-LLH per corpus.
 
-### Perplexity (appendix)
+## Visualize
+
+`visualize_results.py` produces the six figures reported in the paper:
+`garden_path_effects_combined`, `delta_llh_combined`, `transfer_matrix_small_roi1`,
+`transfer_matrix_all_sizes_roi1_md_lg_clean`, `rc_effects_combined`, and
+`rc_delta_llh_combined`. The figures lay out GPT-2 small / medium / large side by
+side, so all three sizes must be trained and evaluated first.
+
+```bash
+cd src/reverse_engineering
+uv run python visualize_results.py \
+  --summary-small  all_folds_evaluation_summary.json \
+  --summary-medium all_folds_evaluation_summary_md.json \
+  --summary-large  all_folds_evaluation_summary_lg.json \
+  --baseline-small  baseline_evaluation/baseline_summary.json \
+  --baseline-medium baseline_evaluation_md/baseline_summary.json \
+  --baseline-large  baseline_evaluation_lg/baseline_summary.json \
+  --output-dir figures
+```
+
+The RC figures read the RC summaries (`all_folds_evaluation_summary_rc{,_md,_lg}.json`
+and `baseline_evaluation_rc*/baseline_summary.json`). The transfer-matrix figures read
+the per-construction summaries from `--base-dir` (default `.`), expecting
+`all_folds_evaluation_summary_{mvrr,nps,npz}{,_md,_lg}.json` — so name the
+single-phenomenon eval outputs accordingly (e.g. `--summary-output
+all_folds_evaluation_summary_mvrr.json` for the `output/gp_mvrr` run). The RC-Large
+folds that diverged (20, 22) are dropped from the aggregates automatically. Figures
+are written to `figures/`.
+
+## Appendix
+
+### Perplexity
 
 Subword perplexity on the naturalistic corpora for the trained folds and the
 untrained baseline, in one run:
@@ -196,7 +227,7 @@ uv run python evaluate_perplexity.py --all-folds --folds-dir output/gp_all \
 The baseline is evaluated in the same run (`--skip-baseline` to skip). For GPT-2
 medium/large, set `--baseline-model` and `--folds-dir` accordingly.
 
-### BLiMP (appendix)
+### BLiMP
 
 BLiMP accuracy via the [lm-evaluation-harness](https://github.com/EleutherAI/lm-evaluation-harness),
 aggregated across folds. Requires the optional `blimp` extra:
@@ -211,7 +242,7 @@ bash scripts/evaluate_blimp_rc.sh   # RC (reuses the baseline from the GP script
 Override `MODELS_DIR` / `BASELINE_MODEL` / `OUT` (and `BLIMP_DEVICE`,
 `BLIMP_BATCH_SIZE`) for GPT-2 medium/large.
 
-### Appendix table (perplexity + BLiMP)
+### Perplexity + BLiMP table
 
 Once the perplexity (`perplexity_evaluation/results*.json`) and BLiMP
 (`blimp_evaluation*/summary.json`) results exist for all three sizes, render the
@@ -219,7 +250,7 @@ appendix LaTeX table (`tab:ppl_blimp_appendix`):
 
 ```bash
 cd src/reverse_engineering
-uv run python generate_appendix_table.py   # -> arr_plots/ppl_blimp_appendix.tex
+uv run python generate_appendix_table.py   # -> figures/ppl_blimp_appendix.tex
 ```
 
 It covers Small / Medium / Large (see the `SIZES` list for the expected result
