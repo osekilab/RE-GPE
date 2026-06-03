@@ -62,3 +62,52 @@ regression baseline), prepared once:
 uv run python src/garden_path_cross_validation/data_preparation/cli.py process-fillers --min-rt 100 --max-rt 3000
 # -> src/garden_path_cross_validation/folds/fillers_processed.csv (used by GP and RC eval)
 ```
+
+## Data: Naturalistic delta-LLH evaluation corpora
+
+Three self-paced reading corpora are used **for evaluation only** (no model is
+trained on them) to measure the delta log-likelihood of human reading times. Each
+is processed into a `*_processed.csv` under `data/`.
+
+### Natural Stories
+
+From the public [Natural Stories corpus](https://github.com/languageMIT/naturalstories)
+(a submodule):
+
+```bash
+git submodule update --init external/naturalstories
+uv run python src/natural_stories_preparation/cli.py \
+  --naturalstories-path external/naturalstories --output-dir data/
+# -> data/natural_stories_processed.csv
+```
+
+### UCL
+
+Self-paced reading subset of the UCL corpus (Frank et al., 2013). Download the
+paper's supplementary material and unzip into `data/ucl/`:
+
+```bash
+mkdir -p data/ucl
+curl -L -o /tmp/ucl_data.zip \
+  "https://static-content.springer.com/esm/art%3A10.3758%2Fs13428-012-0313-y/MediaObjects/13428_2012_313_MOESM1_ESM.zip"
+unzip -j /tmp/ucl_data.zip -d data/ucl
+uv run python src/ucl_preparation/cli.py \
+  --ucl-path data/ucl --output-dir data/ \
+  --use-selfpaced --output-filename ucl_selfpaced_processed.csv
+# -> data/ucl_selfpaced_processed.csv
+```
+
+### Smith 2013
+
+Brown-corpus self-paced reading (Smith & Levy, 2013), read from the `data.pkl`
+bundle redistributed in de Varda's
+[`local_attention_reading_times`](https://github.com/Andrea-de-Varda/local_attention_reading_times).
+
+```bash
+curl -L -o data/data.pkl \
+  https://raw.githubusercontent.com/Andrea-de-Varda/local_attention_reading_times/main/data.pkl
+# expected md5: fa09cf375176fdde680d1ce47d7a2806
+uv run python src/smith2013_preparation/cli.py \
+  --smith2013-path data/data.pkl --output-dir data/
+# -> data/smith2013_processed.csv
+```
