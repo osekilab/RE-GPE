@@ -139,3 +139,43 @@ uv run python train_all_valid_folds_rc.py --output-dir output/rc
 Each fold's model is saved under `<output-dir>/<construction>_fold_N/final_checkpoint`.
 Useful options: `--folds 0 1 2` or `--start-fold` / `--end-fold` for a subset,
 `--device cuda:0`, `--dry-run` to preview the commands.
+
+## Evaluate
+
+Each trained fold is evaluated for two things and compared against the untrained
+baseline (the same GPT-2 from Hugging Face): the **garden-path / relative-clause
+effect** (Amb − Unamb reading time at ROI 0/1/2, via a regression fit on the
+fillers) and the **delta log-likelihood** on the naturalistic corpora. Run from
+`src/reverse_engineering/`; `--config-template` must match the training template.
+WT decoding is on by default (`--no-wt-decoding` to disable).
+
+```bash
+cd src/reverse_engineering
+
+# Garden-path: trained folds + untrained baseline
+uv run python evaluate_all_folds.py \
+  --models-dir output/gp_all --config-template configs/garden_path_template.yaml \
+  --summary-output all_folds_evaluation_summary.json \
+  --eval-natural-stories --eval-ucl --eval-smith2013 --device cuda:0
+uv run python evaluate_baseline.py all \
+  --config-template configs/garden_path_template.yaml \
+  --output-dir baseline_evaluation \
+  --eval-natural-stories --eval-ucl --eval-smith2013 --device cuda:0
+
+# Relative clause
+uv run python evaluate_all_folds_rc.py \
+  --models-dir output/rc --config-template configs/relative_clause_template.yaml \
+  --folds-dir ../../src/relative_clause_cross_validation/folds_filtered \
+  --summary-output all_folds_evaluation_summary_rc.json \
+  --eval-natural-stories --eval-ucl --eval-smith2013 --device cuda:0
+uv run python evaluate_baseline_rc.py all \
+  --config-template configs/relative_clause_template.yaml \
+  --folds-dir ../../src/relative_clause_cross_validation/folds_filtered \
+  --output-dir baseline_evaluation_rc \
+  --eval-natural-stories --eval-ucl --eval-smith2013 --device cuda:0
+```
+
+For the single-phenomenon runs, point `--models-dir` / `--config-template` at the
+matching run (e.g. `output/gp_mvrr` with `configs/garden_path_template_mvrr.yaml`).
+Each summary holds the per-construction Amb − Unamb effects (predicted and actual,
+ROI 0/1/2) and the delta-LLH per corpus.
