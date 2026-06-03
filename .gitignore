@@ -1,0 +1,55 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+
+# Data and output directories
+/data/
+/output/
+/src/garden_path_cross_validation/output/
+/src/reverse_engineering/configs/fold_configs/
+/src/reverse_engineering/fold_evaluation_summary/
+/src/reverse_engineering/baseline_evaluation/
+/src/reverse_engineering/baseline_evaluation_rc/
+/src/reverse_engineering/configs/rc_fold_configs/
+/src/reverse_engineering/all_folds_evaluation_summary*.json
+/src/reverse_engineering/training_summary*.txt
+
+# Logs and model outputs
+/src/reverse_engineering/logs/
+/src/reverse_engineering/data_split_logs/
+/src/reverse_engineering/output/
+/src/garden_path_cross_validation/logs/
+/src/garden_path_cross_validation/configs/
+/src/garden_path_cross_validation/data_split_logs/
+/src/garden_path_cross_validation/folds/
+/src/garden_path_cross_validation/folds_filtered/
+/src/garden_path_cross_validation/subject_averages/
+/src/garden_path_cross_validation/visualizations/
+/src/garden_path_cross_validation/cross_validation_results/
+
+/src/relative_clause_cross_validation/folds/
+/src/relative_clause_cross_validation/folds_filtered/
+/src/relative_clause_cross_validation/subject_averages/
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Evaluation outputs
+/src/reverse_engineering/perplexity_evaluation/
+/src/reverse_engineering/blimp_evaluation*/
+/src/reverse_engineering/arr_plots/
