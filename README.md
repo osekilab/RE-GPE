@@ -1,6 +1,10 @@
-# Reverse-Engineering the Reader: Garden-Path Fine-tuning
+# Reverse-Engineering Garden-Path Effects
 
-<!-- TODO: intro/overview (refine later). -->
+Official implementation of the ACL 2026 paper *An Existence Proof for Neural
+Language Models That Can Explain Garden-Path Effects via Surprisal*
+([arXiv:2604.18293](https://arxiv.org/abs/2604.18293)) — code for reverse-engineering
+human garden-path effects via language-model surprisal, built on
+[`samuki/reverse-engineering-the-reader`](https://github.com/samuki/reverse-engineering-the-reader).
 
 ## Environment Setup
 
@@ -256,3 +260,22 @@ uv run python generate_appendix_table.py   # -> figures/ppl_blimp_appendix.tex
 It covers Small / Medium / Large (see the `SIZES` list for the expected result
 filenames); the RC-Large folds that failed to converge (20, 22) are excluded
 automatically.
+
+## Citation
+
+If you use this code, please cite our paper (arXiv preprint for now; to be updated
+to the ACL Anthology entry once published):
+
+```bibtex
+@misc{yoshida2026existence,
+  title         = {An Existence Proof for Neural Language Models That Can
+                   Explain Garden-Path Effects via Surprisal},
+  author        = {Yoshida, Ryo and Isono, Shinnosuke and Someya, Taiga and
+                   Oseki, Yohei and Kuribayashi, Tatsuki},
+  year          = {2026},
+  eprint        = {2604.18293},
+  archivePrefix = {arXiv},
+  primaryClass  = {cs.CL},
+  url           = {https://arxiv.org/abs/2604.18293}
+}
+```
