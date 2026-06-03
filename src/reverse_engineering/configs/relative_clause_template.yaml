@@ -1,0 +1,208 @@
+# Relative Clause Training Configuration
+# Based on garden_path_template.yaml with RC-specific adjustments
+
+experiment_name: "relative_clause_roi_exclusion"
+
+# Global seed
+seed: 42
+
+# Model settings
+model: "gpt2"  # GPT-2 (124M). ※GPT-2 XL ではありません
+use_fp16: false  # FP16 not needed for smaller models
+
+# Training settings
+training_kwargs:
+  # ===== CORE LOSS SETTINGS =====
+  loss_type: "mse"    # Simplified to MSE only
+  kl_weight: 0        # Optional KL divergence (set to 0 to disable)
+  kl_variant: "full"  # "abs" or "full" when kl_weight > 0
+  reduction: "mean"
+
+  # ===== OPTIMIZER SETTINGS =====
+  learning_rate: 0.000035
+  min_lr: 0.000000052
+  lr_scheduler_type: "cosine"
+  warmup_steps: 3
+  optim: "adamw_torch"
+  weight_decay: 0.01
+
+  # ===== BATCH SETTINGS =====
+  # Relative Clause requires paired sampling, so batch size should be even
+  train_batch_size: 44   # even number for paired sampling
+  eval_batch_size: 44
+  accumulation_steps: 1  # effective batch size = 24 * 1
+
+  # ===== MAX LENGTH SETTINGS =====
+  # RC sentences are typically shorter than garden-path
+  garden_path_max_length: 35       # Max length for RC sentences (18-27 words typical)
+  natural_stories_max_length: 100  # Max length for Natural Stories
+  filler_max_length: 40            # Max length for filler sentences
+
+  # ===== TRAINING SCHEDULE =====
+  eval_steps: 10
+  total_steps_multiplier: 50  # total steps = eval_steps * multiplier = 500
+
+  # ===== CHECKPOINT SETTINGS =====
+  save_checkpoints: true
+  max_checkpoints: 3
+  output_dir: "output/relative_clause_fold_1"
+
+  # ===== DATA MASKING =====
+  mask_zero_reading_times: true  # Mask out zero RTs
+  mask_zero_freqs: true          # Mask out OOV words
+  mask_last_region: true
+
+  # ===== KL MASKING SETTINGS =====
+  # Control what positions are excluded from KL loss
+  # By default, KL uses only padding mask (word_ids != -1)
+  # Set these to true to exclude additional positions from KL loss
+  kl_exclude_roi: false              # Exclude ROI positions (0, 1, 2) from KL
+  kl_mask_zero_reading_times: false  # Exclude zero reading times from KL
+  kl_mask_zero_freqs: false          # Exclude OOV words from KL
+  kl_mask_last_region: false         # Exclude last word from KL
+
+  # ===== SPILLOVER FEATURES =====
+  use_frequency_spillover: false
+  use_surprisal_spillover: false
+  use_length_spillover: false
+  use_word_position: true
+
+  # ===== ROI EXCLUSION (TRAINING) =====
+  # Exclude critical regions from regression during training
+  # ROI=NA words are automatically included (non-critical words)
+  exclude_roi_from_regression: true
+  roi_exclusion_values: [0, 1, 2]  # ROI 0=critical, 1-2=spillover
+
+  # ===== FILLER COEFFICIENTS TRAINING =====
+  # Use filler coefficients for training (like evaluation)
+  use_filler_coefficients_training: false
+
+  # ===== ROI-ONLY LOSS =====
+  # Train using only specific ROI positions for loss calculation
+  use_roi_only_loss: false
+  roi_values_for_loss: [0, 1, 2]
+
+  # ===== RELATIVE CLAUSE PHENOMENA =====
+  # RC data has single construction: "RelativeClause"
+  # Amb = RC_Obj (ambiguous), Unamb = RC_Subj (unambiguous)
+  selected_phenomena: ["RelativeClause"]
+
+  # Evaluation phenomena (for monitoring garden-path effects)
+  eval_phenomena: ["RelativeClause"]
+
+  # ===== FILLER REGRESSION (EVALUATION) =====
+  # Path to filler data for computing evaluation coefficients
+  filler_data_path: "../../src/garden_path_cross_validation/folds/fillers_processed.csv"
+
+  # ===== EVALUATION COEFFICIENTS =====
+  # Use training data (excluding ROI) to compute coefficients for evaluation
+  use_training_data_coefficients_eval: false
+
+  # ===== COEFFICIENT REGULARIZATION =====
+  # Keep batch coefficients close to baseline/filler coefficients
+  # Prevents RC overfitting while maintaining baseline linguistic effects
+  use_baseline_coefficient_regularization: true
+  baseline_coef_regularization_weight: 100
+
+  # ===== FILLER DATA EVALUATION =====
+  # Optional: evaluate filler data with delta log-likelihood (like SPR datasets)
+  eval_filler: false
+
+  # ===== SPR (SELF-PACED READING) CONFIGURATION =====
+  spr_datasets:
+    - name: "natural_stories"
+      path: "../../data/natural_stories_processed.csv"
+      max_length: 100
+      evaluate_during_training: true
+    - name: "ucl_selfpaced"
+      path: "../../data/ucl_selfpaced_processed.csv"
+      max_length: 40
+      evaluate_during_training: true
+    - name: "smith2013"
+      path: "../../data/smith2013_processed.csv"
+      max_length: 65
+      evaluate_during_training: true
+
+  # ===== DATA PATHS =====
+  # Training data (RC fold)
+  train_dataset: "garden_path"         # Uses same loader as garden-path
+  preference_dataset: "garden_path"
+  data_path: "../../src/relative_clause_cross_validation/folds_filtered/fold_6/rc_train.csv"
+  train_dataset_target: "reading_time"
+
+  # Evaluation data (RC fold)
+  eval_dataset: "garden_path"
+  eval_data_path: "../../src/relative_clause_cross_validation/folds_filtered/fold_6/rc_test.csv"
+  eval_dataset_target: "reading_time"
+
+  # ===== PAIRED BATCH SAMPLING =====
+  # Essential for RC: ensures Amb/Unamb pairs in same batch
+  use_paired_batch_sampler: true
+
+  # ===== MONITORING SETTINGS =====
+  # Log RC differences every N steps (hardcoded as 10 in trainer)
+  # Monitors actual vs predicted RT differences (Amb - Unamb) per ROI
+
+# ===== USAGE NOTES =====
+#
+# 1. Data Characteristics:
+#    - Construction: "RelativeClause" (single phenomenon)
+#    - Amb = RC_Obj (object relative clause)
+#    - Unamb = RC_Subj (subject relative clause)
+#    - ROI range: -6 to +11 (variable across items)
+#    - ROI=NA: ~8.8% of words (treated as non-critical)
+#    - Average sentence length: 18-27 words
+#
+# 2. Training Flow:
+#    - Uses batch coefficients with ROI exclusion
+#    - ROI=NA words are INCLUDED in regression (non-critical words)
+#    - Paired sampling ensures Amb/Unamb in same batch
+#    - Monitors RC differences (Amb - Unamb) every 10 steps
+#
+# 3. Evaluation Flow:
+#    - Computes training data coefficients (excluding ROI 0,1,2)
+#    - Uses these coefficients for all eval batches
+#    - Measures garden-path effects: RC_Obj - RC_Subj
+#
+# 4. ROI Handling:
+#    - Training regression: Excludes ROI=0,1,2; Includes ROI=NA
+#    - Fold filtering: Checked ROI=0,2 for overlap; ROI=1 and NA excluded
+#    - Effect measurement: Only ROI=0,1,2 measured
+#
+# 5. Key Parameters to Tune:
+#    - learning_rate: Try 1e-4 to 1e-5
+#    - batch_size: Keep small-medium (32-66) for paired sampling
+#    - accumulation_steps: Increase for larger effective batch
+#    - roi_exclusion_values: [0, 1, 2] recommended
+#
+# 6. To Run Single Fold:
+#    cd src/reverse_engineering
+#    PYTORCH_ENABLE_MPS_FALLBACK=1 uv run python run.py \
+#      --config configs/relative_clause_template.yaml
+#
+# 7. To Run All Folds:
+#    Create fold-specific configs or use script with fold loop
+#    Update data_path and eval_data_path for each fold
+#
+# 8. Monitor Progress:
+#    tail -f src/reverse_engineering/logs/log_*.log
+#
+# 9. Expected Output:
+#    Step 10: loss=0.0234
+#    Garden-path differences (Amb - Unamb):
+#      RelativeClause ROI0: actual=45.2ms, predicted=38.7ms (n=2)
+#      RelativeClause ROI1: actual=32.1ms, predicted=28.4ms (n=2)
+#      RelativeClause ROI2: actual=25.3ms, predicted=22.1ms (n=2)
+#
+# 10. Evaluation Scripts:
+#     # Evaluate single fold
+#     PYTORCH_ENABLE_MPS_FALLBACK=1 uv run python evaluate_fold.py \
+#       --checkpoint output/relative_clause_fold_0/final_checkpoint \
+#       --fold-num 0 \
+#       --config-template configs/relative_clause_template.yaml \
+#       --folds-dir ../../src/relative_clause_cross_validation/folds_filtered
+#
+#     # Evaluate all folds
+#     PYTORCH_ENABLE_MPS_FALLBACK=1 uv run python evaluate_all_folds.py \
+#       --config-template configs/relative_clause_template.yaml \
+#       --folds-dir ../../src/relative_clause_cross_validation/folds_filtered

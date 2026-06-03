@@ -1,0 +1,179 @@
+# Garden-Path Training Configuration
+# Implementation with ROI exclusion and filler regression
+
+experiment_name: "garden_path_roi_exclusion"
+
+# Global seed
+seed: 42
+
+# Model settings
+model: "gpt2"  # or "gpt2-medium", "gpt2-large"
+use_fp16: false  # FP16 not needed for smaller models
+
+# Training settings
+training_kwargs:
+  # ===== CORE LOSS SETTINGS =====
+  loss_type: "mse"  # Simplified to MSE only
+  kl_weight: 0    # Optional KL divergence (set to 0 to disable)
+  kl_variant: "full" # "abs" or "full" when kl_weight > 0
+  reduction: "mean"
+
+  # ===== OPTIMIZER SETTINGS =====
+  learning_rate: 0.000035
+  min_lr: 0.000000052
+  lr_scheduler_type: "cosine"
+  warmup_steps: 3  # Reduced for small dataset
+  optim: "adamw_torch"
+  weight_decay: 0.01
+
+  # ===== BATCH SETTINGS =====
+  # Garden-path requires paired sampling, so batch size should be even
+  train_batch_size: 44   # Reduced for paired sampling ( pairs)
+  eval_batch_size: 44    # Keep consistent with training
+  accumulation_steps: 1 # Effective batch = 32
+
+  # ===== MAX LENGTH SETTINGS =====
+  # These are used for datasets that don't have individual configurations below
+  garden_path_max_length: 30      # Max length for garden-path sentences
+  natural_stories_max_length: 100  # Max length for Natural Stories (often longer)
+  filler_max_length: 40            # Max length for filler sentences
+
+  # ===== TRAINING SCHEDULE =====
+  eval_steps: 10               # Evaluate every N steps
+  total_steps_multiplier: 50    # Total steps = eval_steps * multiplier = 500
+
+  # ===== CHECKPOINT SETTINGS =====
+  save_checkpoints: true
+  max_checkpoints: 3  # Keep only last 3 checkpoints
+  output_dir: "output/garden_path_template_nps"
+
+  # ===== DATA MASKING =====
+  mask_zero_reading_times: true  # Mask out zero RTs
+  mask_zero_freqs: true          # Mask out OOV words
+  mask_last_region: true
+
+  # ===== SPILLOVER FEATURES =====
+  use_frequency_spillover: true   # Use lag-1, lag-2 frequency
+  use_surprisal_spillover: true   # Use lag-1, lag-2 surprisal
+  use_length_spillover: true    # Use lag-1, lag-2 length
+  use_word_position: true         # Include word position feature
+
+  # ===== ROI EXCLUSION (TRAINING) =====
+  # Exclude critical regions from regression during training
+  exclude_roi_from_regression: true
+  roi_exclusion_values: [0, 1, 2]  # ROI 0=critical, 1-2=spillover
+
+  # ===== FILLER COEFFICIENTS TRAINING =====
+  # Use filler coefficients for training (like evaluation)
+  # If true: Compute filler coefficients each step and use them for loss
+  # If false: Use batch coefficients with ROI exclusion (default)
+  use_filler_coefficients_training: false  # Don't use with ROI-only loss
+
+  # ===== ROI-ONLY LOSS =====
+  # Train using only specific ROI positions for loss calculation
+  # If true: Only compute loss on specified ROI positions (critical regions)
+  # If false: Use all valid positions for loss (default)
+  use_roi_only_loss: false
+  roi_values_for_loss: [0, 1, 2]  # Focus on critical and spillover positions
+
+  # ===== GARDEN-PATH PHENOMENA =====
+  # Which constructions to use for training
+  selected_phenomena: ["NPS"]
+
+  # Evaluation phenomena (for monitoring garden-path effects)
+  # If not specified, defaults to selected_phenomena
+  eval_phenomena: ["MVRR", "NPS", "NPZ"]
+
+  # ===== FILLER REGRESSION (EVALUATION) =====
+  # Path to filler data for computing evaluation coefficients
+  filler_data_path: "../../src/garden_path_cross_validation/folds/fillers_processed.csv"
+
+  # ===== EVALUATION COEFFICIENTS =====
+  # Use training data (excluding ROI) to compute coefficients for evaluation
+  # If true: Use all training data (excluding ROI) for evaluation coefficients
+  # If false: Use filler data for evaluation coefficients (default)
+  use_training_data_coefficients_eval: false  # Use filler for garden-path
+
+  # ===== COEFFICIENT REGULARIZATION =====
+  # Keep batch coefficients close to baseline/filler coefficients
+  # Prevents garden-path overfitting while maintaining baseline linguistic effects
+  use_baseline_coefficient_regularization: true
+  baseline_coef_regularization_weight: 100
+
+  # ===== FILLER DATA EVALUATION =====
+  # Optional: evaluate filler data with delta log-likelihood (like SPR datasets)
+  eval_filler: true
+  # filler_data_path is already defined above for regression coefficients
+
+  # ===== SPR (SELF-PACED READING) CONFIGURATION =====
+  # SPR datasets for evaluation with delta log-likelihood
+  # All SPR datasets (including Natural Stories) are defined here
+  spr_datasets:
+    - name: "natural_stories"
+      path: "../../data/natural_stories_processed.csv"
+      max_length: 100
+      evaluate_during_training: true
+    - name: "ucl_selfpaced"
+      path: "../../data/ucl_selfpaced_processed.csv"
+      max_length: 40
+      evaluate_during_training: true
+    - name: "smith2013"
+      path: "../../data/smith2013_processed.csv"
+      max_length: 65
+      evaluate_during_training: true
+
+  # ===== DATA PATHS =====
+
+  # Training data (garden-path fold)
+  train_dataset: "garden_path"
+  preference_dataset: "garden_path"
+  data_path: "../../src/garden_path_cross_validation/folds_filtered/fold_4/garden_path_train.csv"
+  train_dataset_target: "reading_time"
+
+  # Evaluation data (garden-path fold)
+  eval_dataset: "garden_path"
+  eval_data_path: "../../src/garden_path_cross_validation/folds_filtered/fold_4/garden_path_test.csv"
+  eval_dataset_target: "reading_time"
+
+  # ===== PAIRED BATCH SAMPLING =====
+  # Essential for garden-path: ensures Amb/Unamb pairs in same batch
+  use_paired_batch_sampler: true
+
+  # ===== MONITORING SETTINGS =====
+  # Log garden-path differences every N steps (hardcoded as 50 in trainer)
+  # Monitors actual vs predicted RT differences (Amb - Unamb) per ROI
+
+# ===== USAGE NOTES =====
+#
+# 1. Training Flow:
+#    - Uses batch coefficients with ROI exclusion
+#    - Paired sampling ensures Amb/Unamb in same batch
+#    - Monitors garden-path differences every 50 steps
+#
+# 2. Evaluation Flow:
+#    - Computes filler coefficients once
+#    - Uses filler coefficients for all eval batches
+#    - SPR datasets evaluation (Natural Stories, UCL selfpaced, Smith2013, etc.)
+#      Enabled via spr_datasets[].evaluate_during_training flag
+#    - Optional filler data evaluation (delta log-likelihood)
+#
+# 3. Key Parameters to Tune:
+#    - learning_rate: Try 1e-4 to 1e-5
+#    - batch_size: Keep small (4-8) for paired sampling
+#    - accumulation_steps: Increase for larger effective batch
+#    - roi_exclusion_values: Adjust based on your phenomena
+#
+# 4. To Run:
+#    cd src/reverse_engineering
+#    PYTORCH_ENABLE_MPS_FALLBACK=1 uv run python run.py --config configs/garden_path_simplified.yaml
+#
+# 5. Monitor Progress:
+#    tail -f src/reverse_engineering/logs/log_*.log
+#
+# 6. Expected Output:
+#    Step 50: loss=0.0234
+#    Garden-path differences (Amb - Unamb):
+#      MVRR ROI0: actual=45.2ms, predicted=38.7ms (n=4)
+#      MVRR ROI1: actual=32.1ms, predicted=28.4ms (n=4)
+#      NPS ROI0: actual=52.3ms, predicted=41.9ms (n=3)
+#      ...

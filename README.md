@@ -111,3 +111,31 @@ uv run python src/smith2013_preparation/cli.py \
   --smith2013-path data/data.pkl --output-dir data/
 # -> data/smith2013_processed.csv
 ```
+
+## Train
+
+One model is fine-tuned per fold (leave-one-out: 23 training items, 1 held out).
+Run from `src/reverse_engineering/`; the orchestrators generate a per-fold config
+from a template and run `run.py` for each fold. The templates encode the paper's
+hyperparameters and default to **GPT-2 small** (seed 42); for the other sizes
+change `model:` to `"gpt2-medium"` / `"gpt2-large"`. On Apple Silicon, prefix
+commands with `PYTORCH_ENABLE_MPS_FALLBACK=1`.
+
+```bash
+cd src/reverse_engineering
+
+# Garden-path, all phenomena together (main)
+uv run python train_all_valid_folds.py --output-dir output/gp_all
+
+# Garden-path, one phenomenon at a time (analysis)
+uv run python train_all_valid_folds.py \
+  --base-config configs/garden_path_template_mvrr.yaml --output-dir output/gp_mvrr
+# likewise _nps.yaml -> output/gp_nps, _npz.yaml -> output/gp_npz
+
+# Relative clause
+uv run python train_all_valid_folds_rc.py --output-dir output/rc
+```
+
+Each fold's model is saved under `<output-dir>/<construction>_fold_N/final_checkpoint`.
+Useful options: `--folds 0 1 2` or `--start-fold` / `--end-fold` for a subset,
+`--device cuda:0`, `--dry-run` to preview the commands.
