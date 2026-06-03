@@ -210,3 +210,18 @@ bash scripts/evaluate_blimp_rc.sh   # RC (reuses the baseline from the GP script
 
 Override `MODELS_DIR` / `BASELINE_MODEL` / `OUT` (and `BLIMP_DEVICE`,
 `BLIMP_BATCH_SIZE`) for GPT-2 medium/large.
+
+### Appendix table (perplexity + BLiMP)
+
+Once the perplexity (`perplexity_evaluation/results*.json`) and BLiMP
+(`blimp_evaluation*/summary.json`) results exist for all three sizes, render the
+appendix LaTeX table (`tab:ppl_blimp_appendix`):
+
+```bash
+cd src/reverse_engineering
+uv run python generate_appendix_table.py   # -> arr_plots/ppl_blimp_appendix.tex
+```
+
+It covers Small / Medium / Large (see the `SIZES` list for the expected result
+filenames); the RC-Large folds that failed to converge (20, 22) are excluded
+automatically.
