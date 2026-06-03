@@ -179,3 +179,34 @@ For the single-phenomenon runs, point `--models-dir` / `--config-template` at th
 matching run (e.g. `output/gp_mvrr` with `configs/garden_path_template_mvrr.yaml`).
 Each summary holds the per-construction Amb − Unamb effects (predicted and actual,
 ROI 0/1/2) and the delta-LLH per corpus.
+
+### Perplexity (appendix)
+
+Subword perplexity on the naturalistic corpora for the trained folds and the
+untrained baseline, in one run:
+
+```bash
+cd src/reverse_engineering
+uv run python evaluate_perplexity.py --all-folds --folds-dir output/gp_all \
+  --baseline-model gpt2 --output-path perplexity_evaluation/results.json
+# RC: --folds-dir output/rc --fold-pattern "relative_clause_fold_*" \
+#     --output-path perplexity_evaluation/results_rc.json
+```
+
+The baseline is evaluated in the same run (`--skip-baseline` to skip). For GPT-2
+medium/large, set `--baseline-model` and `--folds-dir` accordingly.
+
+### BLiMP (appendix)
+
+BLiMP accuracy via the [lm-evaluation-harness](https://github.com/EleutherAI/lm-evaluation-harness),
+aggregated across folds. Requires the optional `blimp` extra:
+
+```bash
+uv sync --extra blimp
+# from the repo root (runs lm_eval on the baseline and each fold, then aggregates):
+bash scripts/evaluate_blimp_gp.sh   # -> src/reverse_engineering/blimp_evaluation/summary.json
+bash scripts/evaluate_blimp_rc.sh   # RC (reuses the baseline from the GP script)
+```
+
+Override `MODELS_DIR` / `BASELINE_MODEL` / `OUT` (and `BLIMP_DEVICE`,
+`BLIMP_BATCH_SIZE`) for GPT-2 medium/large.
