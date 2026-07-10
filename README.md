@@ -2,7 +2,7 @@
 
 Official implementation of the ACL 2026 paper *An Existence Proof for Neural
 Language Models That Can Explain Garden-Path Effects via Surprisal*
-([arXiv:2604.18293](https://arxiv.org/abs/2604.18293)) — code for reverse-engineering
+(https://aclanthology.org/2026.acl-long.1694/) — code for reverse-engineering
 human garden-path effects via language-model surprisal, built on
 [`samuki/reverse-engineering-the-reader`](https://github.com/samuki/reverse-engineering-the-reader).
 
@@ -263,19 +263,29 @@ automatically.
 
 ## Citation
 
-If you use this code, please cite our paper (arXiv preprint for now; to be updated
-to the ACL Anthology entry once published):
+If you use this code, please cite our paper:
 
 ```bibtex
-@misc{yoshida2026existence,
-  title         = {An Existence Proof for Neural Language Models That Can
-                   Explain Garden-Path Effects via Surprisal},
-  author        = {Yoshida, Ryo and Isono, Shinnosuke and Someya, Taiga and
-                   Oseki, Yohei and Kuribayashi, Tatsuki},
-  year          = {2026},
-  eprint        = {2604.18293},
-  archivePrefix = {arXiv},
-  primaryClass  = {cs.CL},
-  url           = {https://arxiv.org/abs/2604.18293}
+@inproceedings{yoshida-etal-2026-existence,
+    title = "An Existence Proof for Neural Language Models That Can Explain Garden-Path Effects via Surprisal",
+    author = "Yoshida, Ryo  and
+      Isono, Shinnosuke  and
+      Someya, Taiga  and
+      Oseki, Yohei  and
+      Kuribayashi, Tatsuki",
+    editor = "Liakata, Maria  and
+      Moreira, Viviane P.  and
+      Zhang, Jiajun  and
+      Jurgens, David",
+    booktitle = "Proceedings of the 64th Annual Meeting of the {A}ssociation for {C}omputational {L}inguistics (Volume 1: Long Papers)",
+    month = jul,
+    year = "2026",
+    address = "San Diego, California, United States",
+    publisher = "Association for Computational Linguistics",
+    url = "https://aclanthology.org/2026.acl-long.1694/",
+    doi = "10.18653/v1/2026.acl-long.1694",
+    pages = "36556--36569",
+    ISBN = "979-8-89176-390-6",
+    abstract = "Surprisal theory hypothesizes that the difficulty of human sentence processing increases linearly with surprisal, the negative log-probability of a word given its context. Computational psycholinguistics has tested this hypothesis using language models (LMs) as proxies for human prediction. While surprisal derived from recent neural LMs generally captures human processing difficulty on naturalistic corpora that predominantly consist of simple sentences, it severely underestimates processing difficulty on sentences that require syntactic disambiguation (garden-path effects). This leads to the claim that the processing difficulty of such sentences cannot be reduced to surprisal, although it remains possible that neural LMs simply differ from humans in next-word prediction. In this paper, we investigate whether it is truly impossible to construct a neural LM that can explain garden-path effects via surprisal. Specifically, instead of evaluating off-the-shelf neural LMs, we fine-tune these LMs on garden-path sentences so as to better align surprisal-based reading-time estimates with actual human reading times. Our results show that fine-tuned LMs do not overfit and successfully capture human reading slowdowns on held-out garden-path items; they even improve predictive power for human reading times on naturalistic corpora and preserve their general LM capabilities. These results provide an existence proof for a neural LM that can explain both garden-path effects and naturalistic reading times via surprisal, but also raise a theoretical question: what kind of evidence can truly falsify surprisal theory?"
 }
 ```
